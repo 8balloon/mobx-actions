@@ -1,28 +1,21 @@
-import { action, toJS } from 'mobx'
-
-export const loggingMiddlewares = {
-    
-    preDispatch: (actionName, actionArgument) => {
-        console.log(`ACTION { ${actionName} } DISPATCHED`, toJS(actionArgument))
-    },
-    
-    postDispatch: (actionName, actionArgument) => {
-        console.log(`action { ${actionName} } completed`)
-    }
-    
-}
+import { action } from 'mobx'
 
 export default function MobxActions(actionNames, middlewares) {
     
-    if (!middlewares) middlewares = {}
+    if (!middlewares) {
+        middlewares = {}
+    }
     const { preDispatch, postDispatch } = middlewares
     
     const actions = {}
+    let dispatchId = 0
     actionNames.forEach((name) => {
         actions[name] = action((actionArg) => {
             
+            const currentDispatchId = dispatchId
+            
             if (preDispatch) {
-                preDispatch(name, actionArg)
+                preDispatch(name, actionArg, currentDispatchId)
             }
 
             stores.forEach(store => {
@@ -33,8 +26,10 @@ export default function MobxActions(actionNames, middlewares) {
             })
             
             if (postDispatch) {
-                postDispatch(name, actionArg)
+                postDispatch(name, actionArg, currentDispatchId)
             }
+            
+            dispatchId++
         })
     })
     
@@ -46,33 +41,16 @@ export default function MobxActions(actionNames, middlewares) {
         }
         Object.entries(store.actionHandlers).forEach(([actionName, handler]) => {
             if (!actions[actionName]) {
-                throw new Error(`Unregistered action signature detected on store action handler: { ${actionName} }`)
+                console.error({ key: actionName, handler, store })
+                throw new Error(`actionHandler with key { ${actionName} } does not correspond to an action!!`)
             }
             if (typeof handler !== 'function') {
-                console.error({ handler })
+                console.error({ handler, actionName, store })
                 throw new Error('actionHandler must be a function!!')
             }
         })
         stores.push(store)
     }
     
-    const assertNoUnusedActionNames = () => {
-        actionNames.forEach((actionName) => {
-            let isBound = false
-            stores.forEach(store => {
-                if (store.actionHandlers[actionName]) {
-                    isBound = true
-                }
-            })
-            if (!isBound) {
-                throw new Error(`Action is not used in any store: { ${actionName} }`)
-            }
-        })
-    }
-    
-    return { 
-        actions, 
-        bindActionsToHandlers, 
-        assertNoUnusedActionNames 
-    }
+    return { actions, bindActionsToHandlers }
 }

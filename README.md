@@ -1,12 +1,10 @@
 # mobx-actions
 
-Check out https://github.com/8balloon/boilerplate for an idea of how to use this.
-
 Assumes you use React + Mobx.
 
-The purpose of this package is to support actions that can be dispatched and then listened to by any store.
+This package lets you dispatch actions and the listen for them on Mobx stores.
 
-To do this, pass a list of action names to the default export. 
+To do this, pass a list of action names to the default export. You'll get back an `actions` dispatcher object, and a function you can use on stores to make them listen for actions.
 
 ```
 import { observable } from 'mobx'
@@ -49,7 +47,7 @@ class Store {
 const store = new Store()
 bindActionsToHandlers(store)
 
-const View = () => {
+const View = observer(() => {
     const { clickButtonMessage, subtext } = store
     return (
         <div>
@@ -57,7 +55,7 @@ const View = () => {
             <h6>{subtext}</h6>
         </div>
     )
-}
+})
 
 ReactDOM.render(<View />, document.getElementById('contrivedExample'), () => {
     actions.applicationLoaded()
@@ -68,6 +66,7 @@ ReactDOM.render(<View />, document.getElementById('contrivedExample'), () => {
 A few other things:
 
 - This works with `useStrict` on.
-- There's action-logging middleware support if you want it.
+- This supports pre-dispatch and post-dispatch middleware, if you're into that
 - You should probably just read index.js in the github repo if you want to get the whole picture (it's really not long)
 - Open an issue here if you have questions. (Chances are not a single person will ever read this lol.)
+- Check out https://github.com/8balloon/boilerplate for another example
