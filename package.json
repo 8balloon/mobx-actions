@@ -1,0 +1,13 @@
+{
+  "name": "mobx-actions",
+  "version": "1.0.0",
+  "description": "Magical Mobx actions. Dispatch once, listen anywhere.",
+  "main": "index.js",
+  "repository": "https://github.com/8balloon/mobx-actions",
+  "author": "Ethan Gregory Clark",
+  "license": "MIT",
+  "private": false,
+  "dependencies": {
+    "mobx": "^3.4.1"
+  }
+}
