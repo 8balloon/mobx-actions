@@ -1,25 +1,55 @@
 # mobx-actions
 
-Assumes you use React + Mobx.
+This package lets you dispatch actions from anywhere, and react to them in your Mobx stores.
 
-This package lets you dispatch actions and the listen for them on Mobx stores.
-
-To do this, pass a list of action names to the default export. You'll get back an `actions` dispatcher object, and a function you can use on stores to make them listen for actions.
+To use, pass a list of action names to the library's default export.
 
 ```
-import { observable } from 'mobx'
-import { observer } from 'mobx-react'
+// actions.js
+
 import MobxActions from 'mobx-actions'
-import axios from 'axios'
 
 const actionNames = [
     'applicationLoaded',
     'userClickedSignupButton',
     'serverAcknowledgedSignupClick'
-    ...
 ]
 
-const { actions, bindActionsToHandlers } = MobxActions(actionNames)
+export const { actions, bindActionsToHandlers } = MobxActions(actionNames)
+```
+
+Dispatch actions using the `actions` object.
+
+```
+// app.jsx
+
+import { observer } from 'mobx-react'
+import store from './store.js' // defined next
+import { actions } from './actions.js'
+
+const App = observer(() => {
+    const { clickButtonMessage, subtext } = store
+    return (
+        <div>
+            <button type="button" onClick={actions.userClickedSignupButton}>{clickButtonMessage}</button>
+            <h6>{subtext}</h6>
+        </div>
+    )
+    
+})
+
+ReactDOM.render(<App />, document.getElementById('contrivedExample'), () => {
+    actions.applicationLoaded()
+})
+```
+
+Bind actions to in-store handlers via the `bindActionsToHandlers` function.
+
+```
+// store.js
+
+import axios from 'axios'
+import { actions, bindActionsToHandlers } from './actions.js'
 
 class Store {
     @observable clickButtonMessage = 'Wait, don't click me yet!'
@@ -46,27 +76,11 @@ class Store {
 
 const store = new Store()
 bindActionsToHandlers(store)
-
-const View = observer(() => {
-    const { clickButtonMessage, subtext } = store
-    return (
-        <div>
-            <button type="button" onClick={actions.userClickedSignupButton}>{clickButtonMessage}</button>
-            <h6>{subtext}</h6>
-        </div>
-    )
-})
-
-ReactDOM.render(<View />, document.getElementById('contrivedExample'), () => {
-    actions.applicationLoaded()
-})
-
+export default store
 ```
 
 A few other things:
 
-- This works with `useStrict` on.
-- This supports pre-dispatch and post-dispatch middleware, if you're into that
-- You should probably just read index.js in the github repo if you want to get the whole picture (it's really not long)
-- Open an issue here if you have questions. (Chances are not a single person will ever read this lol.)
+- This works with the `useStrict` Mobx feature
+- This supports pre-dispatch and post-dispatch middleware (just read index.js in the repo if you want to use this -- it's short)
 - Check out https://github.com/8balloon/boilerplate for another example
