@@ -2,7 +2,7 @@
 
 This package lets you dispatch actions from anywhere, and react to them in your Mobx stores.
 
-To use, pass a list of action names to the library's default export.
+To configure, pass a list of action names to the library's default export.
 
 ```
 // actions.js
@@ -15,7 +15,7 @@ const actionNames = [
     'serverAcknowledgedSignupClick'
 ]
 
-export const { actions, bindActionsToHandlers } = MobxActions(actionNames)
+export const { actions, listener } = MobxActions(actionNames)
 ```
 
 Dispatch actions using the `actions` object.
@@ -24,7 +24,7 @@ Dispatch actions using the `actions` object.
 // app.jsx
 
 import { observer } from 'mobx-react'
-import store from './store.js' // defined next
+import store from './store.js'
 import { actions } from './actions.js'
 
 const App = observer(() => {
@@ -35,7 +35,6 @@ const App = observer(() => {
             <h6>{subtext}</h6>
         </div>
     )
-    
 })
 
 ReactDOM.render(<App />, document.getElementById('contrivedExample'), () => {
@@ -43,14 +42,15 @@ ReactDOM.render(<App />, document.getElementById('contrivedExample'), () => {
 })
 ```
 
-Bind actions to in-store handlers via the `bindActionsToHandlers` function.
+Listen for actions with the `@listener` decorator.
 
 ```
 // store.js
 
 import axios from 'axios'
-import { actions, bindActionsToHandlers } from './actions.js'
+import { actions, listener } from './actions.js'
 
+@listener
 class Store {
     @observable clickButtonMessage = 'Wait, don't click me yet!'
     @observable subtext = ''
@@ -75,12 +75,11 @@ class Store {
 }
 
 const store = new Store()
-bindActionsToHandlers(store)
 export default store
 ```
 
 A few other things:
 
 - This works with the `useStrict` Mobx feature
-- This supports pre-dispatch and post-dispatch middleware (just read index.js in the repo if you want to use this -- it's short)
+- This supports pre-dispatch and post-dispatch middleware. (See index.js in the repo if you're curious.)
 - Check out https://github.com/8balloon/boilerplate for another example

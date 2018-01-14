@@ -52,5 +52,14 @@ export default function MobxActions(actionNames, middlewares) {
         stores.push(store)
     }
     
-    return { actions, bindActionsToHandlers }
+    const listener = (StoreClass) => {
+        return class extends StoreClass {
+            constructor() {
+                super()
+                bindActionsToHandlers(this)
+            }
+        }
+    }
+    
+    return { actions, listener }
 }
