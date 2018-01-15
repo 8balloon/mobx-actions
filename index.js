@@ -52,7 +52,7 @@ export default function MobxActions(actionNames, middlewares) {
         stores.push(store)
     }
     
-    const listener = (StoreClass) => {
+    const subscriber = (StoreClass) => {
         return class extends StoreClass {
             constructor() {
                 super()
@@ -61,5 +61,5 @@ export default function MobxActions(actionNames, middlewares) {
         }
     }
     
-    return { actions, listener }
+    return { actions, subscriber }
 }

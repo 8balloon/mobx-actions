@@ -1,6 +1,6 @@
 {
   "name": "mobx-actions",
-  "version": "3.0.0",
+  "version": "4.0.0",
   "description": "Actions for Mobx. Dispatch once, listen anywhere.",
   "main": "index.js",
   "repository": "https://github.com/8balloon/mobx-actions",

@@ -15,7 +15,7 @@ const actionNames = [
     'serverAcknowledgedSignupClick'
 ]
 
-export const { actions, listener } = MobxActions(actionNames)
+export const { actions, subscriber } = MobxActions(actionNames)
 ```
 
 Dispatch actions using the `actions` object.
@@ -42,15 +42,15 @@ ReactDOM.render(<App />, document.getElementById('contrivedExample'), () => {
 })
 ```
 
-Listen for actions with the `@listener` decorator.
+Listen for actions with the `@subscriber` decorator.
 
 ```
 // store.js
 
 import axios from 'axios'
-import { actions, listener } from './actions.js'
+import { actions, subscriber } from './actions.js'
 
-@listener
+@subscriber
 class Store {
     @observable clickButtonMessage = 'Wait, don't click me yet!'
     @observable subtext = ''
@@ -74,8 +74,7 @@ class Store {
     }
 }
 
-const store = new Store()
-export default store
+export default new Store()
 ```
 
 A few other things:
