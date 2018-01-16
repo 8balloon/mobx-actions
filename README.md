@@ -81,4 +81,4 @@ A few other things:
 
 - This works with the `useStrict` Mobx feature
 - This supports pre-dispatch and post-dispatch middleware. (See index.js in the repo if you're curious.)
-- Check out https://github.com/8balloon/boilerplate for another example
+- Check out https://github.com/8balloon/frontend-boilerplate for another example
