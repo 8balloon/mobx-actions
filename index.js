@@ -1,6 +1,6 @@
 import { action } from 'mobx'
 
-export default function MobxActions(actionNames, middlewares) {
+export default function MobxActions(actionTypes, middlewares) {
     
     if (!middlewares) {
         middlewares = {}
@@ -9,24 +9,24 @@ export default function MobxActions(actionNames, middlewares) {
     
     const actions = {}
     let dispatchId = 0
-    actionNames.forEach((name) => {
-        actions[name] = action((actionArg) => {
+    actionTypes.forEach((type) => {
+        actions[type] = action((actionArg) => {
             
             const currentDispatchId = dispatchId
             
             if (preDispatch) {
-                preDispatch(name, actionArg, currentDispatchId)
+                preDispatch(type, actionArg, currentDispatchId)
             }
 
             stores.forEach(store => {
-                const actionHandler = store.actionHandlers[name]
+                const actionHandler = store.actionHandlers[type]
                 if (actionHandler) {
                     actionHandler(actionArg)
                 }
             })
             
             if (postDispatch) {
-                postDispatch(name, actionArg, currentDispatchId)
+                postDispatch(type, actionArg, currentDispatchId)
             }
             
             dispatchId++
@@ -39,13 +39,13 @@ export default function MobxActions(actionNames, middlewares) {
             console.error({ store })
             throw new Error('Missing actionHandlers store property!!')
         }
-        Object.entries(store.actionHandlers).forEach(([actionName, handler]) => {
-            if (!actions[actionName]) {
-                console.error({ key: actionName, handler, store })
-                throw new Error(`actionHandler with key { ${actionName} } does not correspond to an action!!`)
+        Object.entries(store.actionHandlers).forEach(([actionType, handler]) => {
+            if (!actions[actionType]) {
+                console.error({ key: actionType, handler, store })
+                throw new Error(`actionHandler with key { ${actionType} } does not correspond to an action!!`)
             }
             if (typeof handler !== 'function') {
-                console.error({ handler, actionName, store })
+                console.error({ handler, actionType, store })
                 throw new Error('actionHandler must be a function!!')
             }
         })

@@ -1,84 +1,101 @@
-# mobx-actions
+# Mobx Actions
 
-This package lets you dispatch actions from anywhere, and react to them in your Mobx stores.
+> an overly-opinionated reinvisioning of Mobx `@action`s
 
-To configure, pass a list of action names to the library's default export.
+Dispatch actions from anywhere, and respond to them on your stores with `actionHandlers`.
 
-```
-// actions.js
+### Example
 
+```js
+import * as React from 'react'
 import MobxActions from 'mobx-actions'
+import { observable } from 'mobx-react'
+import { useStrict, observer } from 'mobx'
+import { render } from 'react-dom'
 
-const actionNames = [
-    'applicationLoaded',
-    'userClickedSignupButton',
-    'serverAcknowledgedSignupClick'
+useStrict(true) // or don't. idc.
+
+const actionTypes = [
+    'IncrementedCount',
+    'DecrementedCount'
 ]
 
-export const { actions, subscriber } = MobxActions(actionNames)
-```
-
-Dispatch actions using the `actions` object.
-
-```
-// app.jsx
-
-import { observer } from 'mobx-react'
-import store from './store.js'
-import { actions } from './actions.js'
-
-const App = observer(() => {
-    const { clickButtonMessage, subtext } = store
-    return (
-        <div>
-            <button type="button" onClick={actions.userClickedSignupButton}>{clickButtonMessage}</button>
-            <h6>{subtext}</h6>
-        </div>
-    )
-})
-
-ReactDOM.render(<App />, document.getElementById('contrivedExample'), () => {
-    actions.applicationLoaded()
-})
-```
-
-Listen for actions with the `@subscriber` decorator.
-
-```
-// store.js
-
-import axios from 'axios'
-import { actions, subscriber } from './actions.js'
+const { actions, subscriber } = MobxActions(actionTypes)
 
 @subscriber
-class Store {
-    @observable clickButtonMessage = 'Wait, don't click me yet!'
-    @observable subtext = ''
+class CounterStore {
+    @observable count = 0
     actionHandlers = {
-        applicationLoaded: () => {
-            this.clickButtonMessage = 'Click me!'
-        },
-        userClickedSignupButton: () => {
-        
-            this.clickButtonMessage = 'You clicked me!'
-            
-            axios.post('/analytics', { someoneClicked: true })
-                .then((response) => {
-                    actions.serverAcknowledgedSignupClick(response.totalClicksToday)
-                })
-                .catch(console.error)
-        },
-        serverAcknowledgedSignupClick: (totalClicksToday) => {
-            this.subtext = `There have been ${totalClicksToday} total clicks today.`
-        }
+        IncrementedCount: () => this.count++
+        DecrementedCount: () => this.count--
     }
 }
 
-export default new Store()
+const counterStore = new CounterStore()
+
+const Counter = observer(() => {
+    const { count } = counterStore
+    return <div>
+        <button onClick={() => actions.DecrementedCount()}>-</button>
+        <span>{counterStore.count}</span>
+        <button onClick={() => actions.IncrementedCount()}>+</button>
+    </div>
+})
+
+render(<Counter />, document.getElementById('root'))
 ```
 
-A few other things:
+### Gotchas and dogmas
 
-- This works with the `useStrict` Mobx feature
-- This supports pre-dispatch and post-dispatch middleware. (See index.js in the repo if you're curious.)
-- Check out https://github.com/8balloon/frontend-boilerplate for another example
+##### Mobx Actions will only pass your first argument to action handlers. 
+
+So be sure to stick your data in a single param object, like so:
+
+```js
+actions.ClickedLoginButton({ username, email })
+```
+
+Other arguments are silently ignored. So just reflect on that.
+
+##### Action handlers go in actionHandlers, and this is a great thing
+
+The `actionHandlers` architecture logically and spatially differentiates your action-handling code from your `@observable` and `@computed` value declarations, making your code infinitely more grokkable.
+
+### Other features
+
+Mobx Actions supports pre- and/or post-dispatch middleware.
+
+```js
+...
+
+const preDispatch = (type, arg, dispatchId) => {
+    console.log(`Whoa, action '${type}' was just called, and nothing else has happened yet!')
+}
+const postDispatch = (type, arg, dispatchId) => {
+    console.log(`Wow, what a wild ride.')
+}
+
+const { actions, subscriber } = MobxActions(actionTypes, { preDispatch, postDispatch })
+
+...
+```
+
+You can use this to write your own fancy logger, or to automatically yell at people who write nested action invocations.
+
+### The state of state management
+
+Many React state management frameworks rely on passing state through props. This is a drag because you have to hold the app's store:props mapping in your head as you do stuff, increasing cognitive load and decreasing happiness. 
+
+Other, more classically Flux-like solutions are really clunky, and force you to think about timing.
+
+Mobx is operates differently from other frameworks. Its worst feature is that it comes with completely unnecessary `Provider` and `inject` features. But it's also painful learning to always dereference store values before `Component.render` `return` statements.
+
+### Why this is the best
+
+Mobx avoids the shortcomings of `prop`y and Fluxy frameworks through annotations and low-level magic. It's great.
+
+Mobx Actions augments this innovation by allowing you to dispatch actions throughout your application, and by scolding you for using `Provider` and `inject`.
+
+### Other examples
+
+If you want to see a larger example, check out [my boilerplate](https://github.com/8balloon/frontend-boilerplate).
