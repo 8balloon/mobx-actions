@@ -72,7 +72,7 @@ const preDispatch = (type, arg, dispatchId) => {
     console.log(`Whoa, action '${type}' was just called, and nothing else has happened yet!')
 }
 const postDispatch = (type, arg, dispatchId) => {
-    console.log(`Wow, what a wild ride.')
+    console.log(`Wow, what a wild ride.`)
 }
 
 const { actions, subscriber } = MobxActions(actionTypes, { preDispatch, postDispatch })
