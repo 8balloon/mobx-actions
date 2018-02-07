@@ -1,34 +1,30 @@
 import { action } from 'mobx'
 
-export default function MobxActions(actionTypes, middlewares) {
-    
-    if (!middlewares) {
-        middlewares = {}
-    }
-    const { preDispatch, postDispatch } = middlewares
+export default function MobxActions(actionTypes, middleware) {
     
     const actions = {}
     let dispatchId = 0
     actionTypes.forEach((type) => {
         actions[type] = action((actionArg) => {
-            
             const currentDispatchId = dispatchId
-            
-            if (preDispatch) {
-                preDispatch(type, actionArg, currentDispatchId)
-            }
-
             stores.forEach(store => {
-                const actionHandler = store.actionHandlers[type]
-                if (actionHandler) {
-                    actionHandler(actionArg)
+                const handler = store.actionHandlers[type]
+                if (!handler) {
+                    return
                 }
+                if (!middleware) {
+                    handler(actionArg)
+                    return
+                }
+                const next = () => handler(actionArg)
+                middleware({
+                    dispatchId: currentDispatchId,
+                    actionType: type,
+                    action: actionArg,
+                    store,
+                    handler
+                }, next)
             })
-            
-            if (postDispatch) {
-                postDispatch(type, actionArg, currentDispatchId)
-            }
-            
             dispatchId++
         })
     })

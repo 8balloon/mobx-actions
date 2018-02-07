@@ -1,8 +1,8 @@
-# Mobx Actions
+# Mobx-Actions
 
-> an overly-opinionated reinvisioning of Mobx `@action`s
+> a reinvisioning of Mobx `@action`s
 
-Dispatch actions from anywhere, and respond to them on your stores with `actionHandlers`.
+Dispatch arguments (**actions**) from anywhere, and respond to them on your stores with `actionHandlers`.
 
 ### Example
 
@@ -11,9 +11,8 @@ import * as React from 'react'
 import MobxActions from 'mobx-actions'
 import { observable } from 'mobx-react'
 import { useStrict, observer } from 'mobx'
+useStrict(true)
 import { render } from 'react-dom'
-
-useStrict(true) // or don't. idc.
 
 const actionTypes = [
     'IncrementedCount',
@@ -26,8 +25,8 @@ const { actions, subscriber } = MobxActions(actionTypes)
 class CounterStore {
     @observable count = 0
     actionHandlers = {
-        IncrementedCount: () => this.count++
-        DecrementedCount: () => this.count--
+        IncrementedCount: ({ amount }) => this.count += amount
+        DecrementedCount: ({ amount }) => this.count -= amount
     }
 }
 
@@ -36,66 +35,66 @@ const counterStore = new CounterStore()
 const Counter = observer(() => {
     const { count } = counterStore
     return <div>
-        <button onClick={() => actions.DecrementedCount()}>-</button>
+        <button onClick={() => {
+            // dispatch action { amount: 1 } of type 'DecrementedCount'
+            actions.DecrementedCount({ amount: 1 })
+        }}>-</button>
         <span>{counterStore.count}</span>
-        <button onClick={() => actions.IncrementedCount()}>+</button>
+        <button onClick={() => {
+            // dispatch action { amount: 1 } of type 'IncrementedCount'
+            actions.IncrementedCount({ amount: 1 })
+        }}>+</button>
     </div>
 })
 
 render(<Counter />, document.getElementById('root'))
 ```
 
-### Gotchas and dogmas
+### Advantages
 
-##### Mobx Actions will only pass your first argument to action handlers. 
+Mobx-Actions prevents imperative code from touching multiple stores.
 
-So be sure to stick your data in a single param object, like so:
-
-```js
-actions.ClickedLoginButton({ username, email })
-```
-
-Other arguments are silently ignored. So just reflect on that.
-
-##### Action handlers go in actionHandlers, and this is a great thing
-
-The `actionHandlers` architecture logically and spatially differentiates your action-handling code from your `@observable` and `@computed` value declarations, making your code infinitely more grokkable.
-
-### Other features
-
-Mobx Actions supports pre- and/or post-dispatch middleware.
+Stores update themselves independently in response to events, which cleanly separates concerns.
 
 ```js
-...
+// instead of this...
+<button onClick={e => {
+    RegistrationStore.submitRegistration()
+    NavigationStore.navigateToRegistrationConfirmation()
+}}>
+    Register
+</button>
 
-const preDispatch = (type, arg, dispatchId) => {
-    console.log(`Whoa, action '${type}' was just called, and nothing else has happened yet!')
-}
-const postDispatch = (type, arg, dispatchId) => {
-    console.log(`Wow, what a wild ride.')
-}
-
-const { actions, subscriber } = MobxActions(actionTypes, { preDispatch, postDispatch })
-
-...
+//...try this
+<button onClick={e => {
+    actions.ClickedRegisterButton()
+}}>
+    Register
+</button>
+//...and define a `ClickedRegisterButton` handler on each relevant store.
 ```
 
-You can use this to write your own fancy logger, or to automatically yell at people who write nested action invocations.
+### Restrictions
 
-### The state of state management
+- Actions dispatched must be a single argument. Other arguments will be ignored.
+- An action handler must be mapped in a `@subscriber`'s actionHandler property to be invoked.
 
-Many React state management frameworks rely on passing state through props. This is a drag because you have to hold the app's store:props mapping in your head as you do stuff, increasing cognitive load and decreasing happiness. 
+### Middleware
 
-Other, more classically Flux-like solutions are really clunky, and force you to think about timing.
+If you would like to modify the behavior of Mobx-Actions, you can do so thorugh middleware.
 
-Mobx is operates differently from other frameworks. Its worst feature is that it comes with completely unnecessary `Provider` and `inject` features. But it's also painful learning to always dereference store values before `Component.render` `return` statements.
+```js
+const middleware = (ctx, next) => {
+    const { dispatchId, actionType, action, store, handler } = ctx
+    // next()
+    handler(action) // replicating the behavior of `next` ourselves.
+}
 
-### Why this is the best
+const { actions, subscriber } = MobxActions(actionTypes, middleware)
+```
 
-Mobx avoids the shortcomings of `prop`y and Fluxy frameworks through annotations and low-level magic. It's great.
-
-Mobx Actions augments this innovation by allowing you to dispatch actions throughout your application, and by scolding you for using `Provider` and `inject`.
+Most users will not require middleware. But if you do, it is extremely flexible.
 
 ### Other examples
 
-If you want to see a larger example, check out [my boilerplate](https://github.com/8balloon/frontend-boilerplate).
+If you want to see a larger example, check out [this boilerplate](https://github.com/8balloon/frontend-boilerplate).
