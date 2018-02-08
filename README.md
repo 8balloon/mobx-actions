@@ -9,8 +9,8 @@ Dispatch arguments (**actions**) from anywhere, and respond to them on your stor
 ```js
 import * as React from 'react'
 import MobxActions from 'mobx-actions'
-import { observable } from 'mobx-react'
-import { useStrict, observer } from 'mobx'
+import { useStrict, observable, computed } from 'mobx'
+import { observer } from 'mobx-react'
 useStrict(true)
 import { render } from 'react-dom'
 
@@ -25,21 +25,38 @@ const { actions, subscriber } = MobxActions(actionTypes)
 class CounterStore {
     @observable count = 0
     actionHandlers = {
-        IncrementedCount: ({ amount }) => this.count += amount
+        IncrementedCount: ({ amount }) => this.count += amount,
         DecrementedCount: ({ amount }) => this.count -= amount
     }
 }
-
 const counterStore = new CounterStore()
+
+@subscriber
+class CommentaryStore {
+    @observable news = `Nothing's happened yet`
+    @computed get analysis() {
+        const oddOrEven = counterStore.count % 2 ? 'odd' : 'even'
+        return `The current count is ${oddOrEven}.`
+    }
+    actionHandlers = {
+        IncrementedCount: () => this.news = 'The count was just incremented.',
+        DecrementedCount: () => this.news = 'The count was just decremented.'
+    }
+}
+const commentaryStore = new CommentaryStore()
 
 const Counter = observer(() => {
     const { count } = counterStore
+    const { news, analysis } = commentaryStore
+    
     return <div>
+        <div>{news}</div>
+        <div>{analysis}</div>
         <button onClick={() => {
             // dispatch action { amount: 1 } of type 'DecrementedCount'
             actions.DecrementedCount({ amount: 1 })
         }}>-</button>
-        <span>{counterStore.count}</span>
+        <span>{count}</span>
         <button onClick={() => {
             // dispatch action { amount: 1 } of type 'IncrementedCount'
             actions.IncrementedCount({ amount: 1 })
