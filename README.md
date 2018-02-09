@@ -25,8 +25,12 @@ const { actions, subscriber } = MobxActions(actionTypes)
 class CounterStore {
     @observable count = 0
     actionHandlers = {
-        IncrementedCount: ({ amount }) => this.count += amount,
-        DecrementedCount: ({ amount }) => this.count -= amount
+        IncrementedCount: ({ amount }) => {
+            this.count += amount
+        },
+        DecrementedCount: ({ amount }) => {
+            this.count -= amount
+        }
     }
 }
 const counterStore = new CounterStore()
@@ -35,12 +39,17 @@ const counterStore = new CounterStore()
 class CommentaryStore {
     @observable news = `Nothing's happened yet`
     @computed get analysis() {
-        const oddOrEven = counterStore.count % 2 ? 'odd' : 'even'
+        const { count } = counterStore
+        const oddOrEven = count % 2 ? 'odd' : 'even'
         return `The current count is ${oddOrEven}.`
     }
     actionHandlers = {
-        IncrementedCount: () => this.news = 'The count was just incremented.',
-        DecrementedCount: () => this.news = 'The count was just decremented.'
+        IncrementedCount: () => {
+            this.news = 'The count was incremented.'
+        },
+        DecrementedCount: () => {
+            this.news = 'The count was decremented.'
+        }
     }
 }
 const commentaryStore = new CommentaryStore()
@@ -53,12 +62,10 @@ const Counter = observer(() => {
         <div>{news}</div>
         <div>{analysis}</div>
         <button onClick={() => {
-            // dispatch action { amount: 1 } of type 'DecrementedCount'
             actions.DecrementedCount({ amount: 1 })
         }}>-</button>
         <span>{count}</span>
         <button onClick={() => {
-            // dispatch action { amount: 1 } of type 'IncrementedCount'
             actions.IncrementedCount({ amount: 1 })
         }}>+</button>
     </div>
@@ -88,7 +95,8 @@ Stores update themselves independently in response to events, which cleanly sepa
 }}>
     Register
 </button>
-//...and define a `ClickedRegisterButton` handler on each relevant store.
+//...and define a `ClickedRegisterButton` handler
+// on the two relevant stores
 ```
 
 ### Restrictions
@@ -101,13 +109,23 @@ Stores update themselves independently in response to events, which cleanly sepa
 If you would like to modify the behavior of Mobx-Actions, you can do so thorugh middleware.
 
 ```js
-const middleware = (ctx, next) => {
-    const { dispatchId, actionType, action, store, handler } = ctx
-    // next()
-    handler(action) // replicating the behavior of `next` ourselves.
+const repeatingMiddleware = (ctx, next) => {
+    const {
+        dispatchId,
+        actionType,
+        action,
+        store,
+        handler
+    } = ctx
+    
+    next()
+    
+    // the equivalent of calling `next()` again
+    handler(action)
 }
 
-const { actions, subscriber } = MobxActions(actionTypes, middleware)
+const { actions, subscriber } = 
+    MobxActions(actionTypes, repeatingMiddleware)
 ```
 
 Most users will not require middleware. But if you do, it is extremely flexible.
