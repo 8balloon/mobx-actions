@@ -1,13 +1,16 @@
-import { action } from 'mobx'
+import { action, decorate, observable } from 'mobx'
 
 export default function MobxActions(actionTypes, middleware) {
     
+    const _stores = []
+    
     const actions = {}
+    
     let dispatchId = 0
     actionTypes.forEach((type) => {
         actions[type] = action((actionArg) => {
             const currentDispatchId = dispatchId
-            stores.forEach(store => {
+            _stores.forEach(store => {
                 const handler = store.actionHandlers[type]
                 if (!handler) {
                     return
@@ -29,12 +32,7 @@ export default function MobxActions(actionTypes, middleware) {
         })
     })
     
-    const stores = []
     const bindActionsToHandlers = (store) => {
-        if (!store.actionHandlers) {
-            console.error({ store })
-            throw new Error('Missing actionHandlers store property!!')
-        }
         Object.entries(store.actionHandlers).forEach(([actionType, handler]) => {
             if (!actions[actionType]) {
                 console.error({ key: actionType, handler, store })
@@ -45,17 +43,38 @@ export default function MobxActions(actionTypes, middleware) {
                 throw new Error('actionHandler must be a function!!')
             }
         })
-        stores.push(store)
+        _stores.push(store)
     }
     
-    const subscriber = (StoreClass) => {
+    const handler = (StoreClass) => {
         return class extends StoreClass {
             constructor() {
                 super()
+                const { actionHandlers } = this
+                if (!actionHandlers) {
+                    return
+                }
+                Object.entries(actionHandlers).forEach(([actionType, handler]) => {
+                    // autobinding
+                    actionHandlers[actionType] = handler.bind(this)
+                })
                 bindActionsToHandlers(this)
             }
         }
     }
     
-    return { actions, subscriber }
+    const store = (StoreClass) => {
+        return class extends handler(StoreClass) {
+            constructor() {
+                super()
+                const observableShape = {} // this does not affect getters and setters
+                Object.keys(this).forEach((key) => {
+                    observableShape[key] = observable
+                })
+                decorate(this, observableShape)
+            }
+        }
+    }
+    
+    return { actions, handler, store }
 }

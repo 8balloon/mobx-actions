@@ -1,6 +1,6 @@
 {
   "name": "mobx-actions",
-  "version": "5.0.2",
+  "version": "6.0.0",
   "description": "Actions for Mobx. Dispatch once, listen anywhere.",
   "main": "lib/mobx-actions.js",
   "repository": "https://github.com/8balloon/mobx-actions",
@@ -10,11 +10,11 @@
   "scripts": {
     "build": "babel src/mobx-actions.js --out-file lib/mobx-actions.js --presets=env"
   },
-  "dependencies": {
-    "mobx": "^3.4.1"
-  },
   "devDependencies": {
     "babel-cli": "^6.26.0",
     "babel-preset-env": "^1.6.1"
+  },
+  "dependencies": {
+    "mobx": "^4.5.0"
   }
 }
