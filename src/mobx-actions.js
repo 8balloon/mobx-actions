@@ -52,7 +52,8 @@ export default function MobxActions(actionTypes, middleware) {
                 super()
                 const { actionHandlers } = this
                 if (!actionHandlers) {
-                    return
+                    // there's no reason to @handler something if there's no actionHandlers.
+                    throw new Error('No actionHandlers property detected on store class.')
                 }
                 Object.entries(actionHandlers).forEach(([actionType, handler]) => {
                     // autobinding
