@@ -1,7 +1,14 @@
 import { action, decorate, observable } from 'mobx'
 
 export default function MobxActions(actionTypes, middleware) {
-    
+
+    if (!Array.isArray(actionTypes) || actionTypes.some(actionType => typeof actionType !== 'string')) {
+        throw new Error('first argument ("actionTypes") must be an array of strings')
+    }
+    if (middleware && typeof middleware !== 'function') {
+        throw new Error('second optional argument ("middleware") must be a function')
+    }
+
     const _stores = []
     
     const actions = {}
@@ -45,34 +52,64 @@ export default function MobxActions(actionTypes, middleware) {
         })
         _stores.push(store)
     }
+
+    const _makeHander = (instance) => {
+        const { actionHandlers } = instance
+        if (!actionHandlers) {
+            // there's no reason to @handler something if there's no actionHandlers.
+            throw new Error('No actionHandlers property detected on store class.')
+        }
+        Object.entries(actionHandlers).forEach(([actionType, handler]) => {
+            // autobinding
+            actionHandlers[actionType] = handler.bind(instance)
+        })
+        bindActionsToHandlers(instance)
+    }
     
-    const handler = (StoreClass) => {
-        return class extends StoreClass {
+    /*
+    Validation lives here for both handlers and stores,
+    since all stores are handlers.
+    */
+    const handler = (StoreObjectOrClass) => {
+        if (
+            !StoreObjectOrClass
+            || !['object', 'function'].includes(typeof StoreObjectOrClass)
+            || Array.isArray(StoreObjectOrClass)
+        ) {
+            throw new Error('Store base must be object or class.')
+        }
+        if (typeof StoreObjectOrClass === 'object') {
+            _makeHandler(StoreObjectOrClass)
+            return StoreObjectOrClass
+        }
+        return class extends StoreObjectOrClass {
             constructor() {
                 super()
-                const { actionHandlers } = this
-                if (!actionHandlers) {
-                    // there's no reason to @handler something if there's no actionHandlers.
-                    throw new Error('No actionHandlers property detected on store class.')
-                }
-                Object.entries(actionHandlers).forEach(([actionType, handler]) => {
-                    // autobinding
-                    actionHandlers[actionType] = handler.bind(this)
-                })
-                bindActionsToHandlers(this)
+                _makeHandler(this)
             }
         }
     }
+
+    const _makeStore = (instance) => {
+        const observableShape = {} // this does not affect getters and setters
+        Object.keys(instance).forEach((key) => {
+            observableShape[key] = observable
+        })
+        decorate(instance, observableShape)
+    }
     
-    const store = (StoreClass) => {
-        return class extends handler(StoreClass) {
+    const store = (StoreObjectOrClass) => {
+        // store base validation lives in the `handler` function
+        if (typeof StoreObjectOrClass === 'object') {
+            _makeHandler(StoreObjectOrClass)
+            _makeStore(StoreObjectOrClass)
+            return StoreObjectOrClass
+        }
+        return class extends StoreObjectOrClass {
             constructor() {
                 super()
-                const observableShape = {} // this does not affect getters and setters
-                Object.keys(this).forEach((key) => {
-                    observableShape[key] = observable
-                })
-                decorate(this, observableShape)
+                _makeHander(this)
+                _makeStore(this)
             }
         }
     }
