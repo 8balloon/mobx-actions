@@ -1,6 +1,6 @@
 # Mobx-Actions
 
-> a reinvisioning of Mobx `@action`s
+> a reinvisioning of Mobx `@action`s. Requires Mobx@3|4
 
 Dispatch arguments (**actions**) from anywhere, and respond to them on your stores with `actionHandlers`.
 

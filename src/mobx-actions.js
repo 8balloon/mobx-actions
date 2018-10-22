@@ -53,7 +53,7 @@ export default function MobxActions(actionTypes, middleware) {
         _stores.push(store)
     }
 
-    const _makeHander = (instance) => {
+    const _makeHandler = (instance) => {
         const { actionHandlers } = instance
         if (!actionHandlers) {
             // there's no reason to @handler something if there's no actionHandlers.
@@ -91,6 +91,7 @@ export default function MobxActions(actionTypes, middleware) {
     }
 
     const _makeStore = (instance) => {
+        _makeHandler(instance)
         const observableShape = {} // this does not affect getters and setters
         Object.keys(instance).forEach((key) => {
             observableShape[key] = observable
@@ -101,14 +102,12 @@ export default function MobxActions(actionTypes, middleware) {
     const store = (StoreObjectOrClass) => {
         // store base validation lives in the `handler` function
         if (typeof StoreObjectOrClass === 'object') {
-            _makeHandler(StoreObjectOrClass)
             _makeStore(StoreObjectOrClass)
             return StoreObjectOrClass
         }
         return class extends StoreObjectOrClass {
             constructor() {
                 super()
-                _makeHander(this)
                 _makeStore(this)
             }
         }
